@@ -17,3 +17,8 @@ Then visit `http://127.0.0.1:5173/`.
 - `js/` — particles, state, mock translator, UI, interactions
 
 Mock replies live in `js/translator.js`. Replace that file when the backend is ready.
+
+## Contributors
+
+- [@fangyib](https://github.com/fangyib)
+- [@zhanghengjia666](https://github.com/zhanghengjia666)
