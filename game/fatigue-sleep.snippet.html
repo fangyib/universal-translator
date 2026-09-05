@@ -1,0 +1,299 @@
+
+<script>
+// 疲惫场景：靠近对面小屋提示 + 点击床睡觉过场
+(function setupFatigueSleep() {
+    const THREE = window.__THREE || window.THREE;
+    if (!THREE) return;
+
+    const cfg = {
+        local: {
+            doorOut:  [-0.55, 0, 0.42],
+            doorIn:   [-1.15, 0, 0.42],
+            bedStand: [-2.10, 0, -0.50],
+            bedEye:   [-2.05, 0, -0.30],
+            wake:     [-1.20, 0, 0.55],
+            exitOut:  [-0.15, 0, 0.45]
+        }
+    };
+
+    let app = null;
+    let root = null;
+    let weatherFx = null;
+    let local = null;
+    let state = 'idle';
+    let busy = false;
+    let created = false;
+    let applyIndoorWeather = () => {};
+    let lastNearHintAt = 0;
+    let lastNearHintKey = '';
+
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => el.classList.add('hidden'), 2200);
+    }
+
+    const canRun = () => {
+        if (!app || !root || !weatherFx) return false;
+        if (!app.cozySettings || app.cozySettings.emotion !== 'fatigue') return false;
+        if (!weatherFx.visible) return false;
+        if (document.body.classList.contains('wake-intro')) return false;
+        return true;
+    };
+
+    const inFlow = () => ['entering', 'lying', 'sleeping', 'waking', 'exiting'].indexOf(state) >= 0;
+
+    function worldOf(v) {
+        const p = new THREE.Vector3(v[0], v[1], v[2]);
+        root.updateMatrixWorld(true);
+        return root.localToWorld(p);
+    }
+
+    function eyeY() {
+        return (app.FLOOR_Y !== undefined ? app.FLOOR_Y : -0.52) + 1.5;
+    }
+
+    function distXZ(a, b) {
+        return Math.hypot(a.x - b.x, a.z - b.z);
+    }
+
+    function convert() {
+        const p = (k) => worldOf(cfg.local[k]);
+        local = {
+            doorOut: p('doorOut'),
+            doorIn: p('doorIn'),
+            bedStand: p('bedStand'),
+            bedEye: p('bedEye'),
+            wake: p('wake'),
+            exitOut: p('exitOut')
+        };
+    }
+
+    function lookTarget(pos, dx, dz) {
+        const t = pos.clone();
+        t.x += dx;
+        t.z += dz;
+        return t;
+    }
+
+    function flyWithApp(toPos, lookPos, dur, onDone) {
+        if (!app.startCamFlight) { if (onDone) onDone(); return; }
+        if (app.disableFirstPerson) app.disableFirstPerson();
+        busy = true;
+        app.startCamFlight(toPos, lookPos, dur, () => {
+            busy = false;
+            if (onDone) onDone();
+        });
+    }
+
+    function makeSunny() {
+        try {
+            if (weatherFx && weatherFx.userData && weatherFx.userData.setWeather) {
+                weatherFx.userData.setWeather('sunny');
+            }
+            if (app.cozySettings) {
+                app.cozySettings.weather = 'sunny';
+                app.cozySettings.emotion = 'joy';
+            }
+            const scene = window.__scene;
+            if (scene) scene.traverse((o) => {
+                if (!o.isLight) return;
+                if (o.isDirectionalLight) {
+                    if (o.castShadow) { o.color.setHex(0xfff0cf); o.intensity = 1.75; }
+                    else { o.color.setHex(0xffffff); o.intensity = 0; }
+                } else if (o.isAmbientLight) {
+                    o.color.setHex(0xffffff);
+                    if (o.intensity < 0.6) o.intensity = 0.32;
+                }
+            });
+        } catch (err) { console.warn(err); }
+    }
+
+    function raycastAt(clientX, clientY) {
+        if (!app || !app.camera || !window.__renderer) return null;
+        const rect = window.__renderer.domElement.getBoundingClientRect();
+        const v = new THREE.Vector2(
+            ((clientX - rect.left) / rect.width) * 2 - 1,
+            -((clientY - rect.top) / rect.height) * 2 + 1
+        );
+        const rc = new THREE.Raycaster();
+        rc.setFromCamera(v, app.camera);
+        const hits = rc.intersectObjects(window.__scene.children, true);
+        return hits.length ? hits[0] : null;
+    }
+
+    function isBedClick(clientX, clientY) {
+        if (!local) return false;
+        const hit = raycastAt(clientX, clientY);
+        if (!hit) return false;
+        const nearBedHit = distXZ(hit.point, local.bedStand) < 2.8;
+        if (!nearBedHit) return false;
+        const player = app.fpMode && app.fpMode.active
+            ? { x: app.fpMode.x, z: app.fpMode.z }
+            : app.camera.position;
+        const nearHouse = distXZ(player, local.doorOut) < 8.5;
+        const nearBedPlayer = distXZ(player, local.bedStand) < 4.2;
+        return nearHouse || nearBedPlayer;
+    }
+
+    function startSleep() {
+        if (!canRun() || busy || inFlow()) return;
+        state = 'entering';
+        const goInBtn = document.getElementById('btn-go-in');
+        if (goInBtn) goInBtn.style.display = 'none';
+        if (app.controls) app.controls.enabled = false;
+
+        const y = eyeY();
+        const bedPos = new THREE.Vector3(local.bedStand.x, y, local.bedStand.z);
+        const low = new THREE.Vector3(local.bedEye.x, y - 0.45, local.bedEye.z);
+        const player = app.fpMode && app.fpMode.active
+            ? { x: app.fpMode.x, z: app.fpMode.z }
+            : app.camera.position;
+        const atBed = distXZ(player, local.bedStand) < 2.2;
+
+        const goLieDown = () => {
+            applyIndoorWeather(true);
+            state = 'lying';
+            flyWithApp(bedPos, lookTarget(local.bedStand, -1.2, 0), 1.0, () => {
+                flyWithApp(low, lookTarget(local.bedEye, 0, 1.6), 1.2, () => {
+                    state = 'sleeping';
+                    doBlackSleep();
+                });
+            });
+        };
+
+        if (atBed) {
+            goLieDown();
+            return;
+        }
+
+        const approach = new THREE.Vector3(local.doorOut.x + 1.6, y, local.doorOut.z);
+        const doorInPos = new THREE.Vector3(local.doorIn.x, y, local.doorIn.z);
+        flyWithApp(approach, lookTarget(local.doorIn, 0, 0), 0.55, () => {
+            flyWithApp(doorInPos, lookTarget(local.bedStand, 0, 0), 0.5, () => {
+                goLieDown();
+            });
+        });
+    }
+
+    function doBlackSleep() {
+        const fade = document.createElement('div');
+        fade.style.cssText = 'position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:210;transition:opacity .9s ease';
+        document.body.appendChild(fade);
+        requestAnimationFrame(() => { fade.style.opacity = '1'; });
+
+        setTimeout(() => {
+            makeSunny();
+            applyIndoorWeather(false);
+            state = 'waking';
+            fade.style.transition = 'opacity 1.1s ease';
+            fade.style.opacity = '0';
+
+            setTimeout(() => {
+                fade.remove();
+                autoWakeAndExit();
+            }, 1150);
+        }, 4000);
+    }
+
+    function finishExit() {
+        const y = eyeY();
+        const outPos = new THREE.Vector3(local.exitOut.x, y, local.exitOut.z);
+        const goInBtn = document.getElementById('btn-go-in');
+        if (goInBtn) goInBtn.style.display = '';
+        if (app.initFirstPerson && app.enableFirstPerson) {
+            app.initFirstPerson(outPos.x, outPos.z, Math.PI / 2, 'outdoor');
+            app.enableFirstPerson(false, 'outdoor');
+        }
+        if (app.controls) app.controls.enabled = true;
+        state = 'done';
+        setTimeout(() => { state = 'idle'; }, 800);
+    }
+
+    function autoWakeAndExit() {
+        const y = eyeY();
+        const wakeView = new THREE.Vector3(local.bedEye.x, y - 0.45, local.bedEye.z);
+        const doorOut = new THREE.Vector3(local.doorOut.x, y, local.doorOut.z);
+        const outPos = new THREE.Vector3(local.exitOut.x, y, local.exitOut.z);
+        const exitDir = new THREE.Vector3(doorOut.x - wakeView.x, 0, doorOut.z - wakeView.z).normalize();
+        const walkLook = outPos.clone().add(exitDir.multiplyScalar(4));
+        walkLook.y = y;
+
+        state = 'exiting';
+        // 睁眼后：视角自然左转面向门口，再直走出房间
+        flyWithApp(wakeView, doorOut, 1.0, () => {
+            flyWithApp(outPos, walkLook, 1.6, finishExit);
+        });
+    }
+
+    function setup() {
+        if (created) return;
+        app = window.__emotionApp;
+        if (!app || !app.startCamFlight) return;
+        root = app.outdoorRef && app.outdoorRef.group;
+        weatherFx = app.weatherFx;
+        if (!root || !weatherFx || !app.outdoorRef.box) return;
+        convert();
+
+        applyIndoorWeather = (indoor) => {
+            try {
+                const fx = weatherFx && weatherFx.userData && weatherFx.userData.fxState;
+                if (!fx) return;
+                if (indoor) {
+                    fx.rainGroup.visible = false;
+                    fx.bolt.visible = false;
+                } else {
+                    fx.rainGroup.visible = fx.weather === 'rain' || fx.weather === 'thunder';
+                    fx.bolt.visible = false;
+                }
+            } catch (_) {}
+        };
+
+        let downAt = null;
+        const canvas = window.__renderer && window.__renderer.domElement;
+        if (canvas) {
+            canvas.addEventListener('pointerdown', (e) => {
+                downAt = { x: e.clientX, y: e.clientY };
+            });
+            canvas.addEventListener('pointerup', (e) => {
+                if (!downAt) return;
+                const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 6;
+                downAt = null;
+                if (moved || busy || !canRun() || state !== 'idle') return;
+                if (isBedClick(e.clientX, e.clientY)) startSleep();
+            });
+        }
+
+        setInterval(() => {
+            if (!app || !app.camera || !local || !canRun() || inFlow()) return;
+            const cam = app.camera.position;
+            const dDoor = distXZ(cam, local.doorOut);
+            const dBed = distXZ(cam, local.bedStand);
+            if (dDoor < 9 || dBed < 4.5) {
+                const now = Date.now();
+                if (lastNearHintKey !== 'sleep' || now - lastNearHintAt > 5000) {
+                    lastNearHintKey = 'sleep';
+                    lastNearHintAt = now;
+                    showToast('或许你想睡一觉（点击床试试）');
+                }
+            } else if (lastNearHintKey === 'sleep') {
+                lastNearHintKey = '';
+            }
+        }, 400);
+
+        created = true;
+        console.log('💤 疲惫睡觉过场已就绪');
+    }
+
+    let tries = 0;
+    const timer = setInterval(() => {
+        if (window.__emotionApp && window.__scene && window.__camera && window.__renderer) {
+            setup();
+            if (created || ++tries > 300) clearInterval(timer);
+        }
+    }, 250);
+})();
+</script>

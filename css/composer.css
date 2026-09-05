@@ -1,0 +1,251 @@
+.composer-wrap {
+  padding: 8px 28px 18px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 156, 64, 0.14);
+  border: 1px solid rgba(255, 156, 64, 0.32);
+  font-size: 12px;
+  color: var(--neon-orange);
+}
+
+.chip button {
+  color: var(--neon-orange);
+  opacity: 0.7;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.chip button:hover {
+  opacity: 1;
+}
+
+.composer {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border-radius: 22px;
+  background: var(--glass-strong);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 156, 64, 0.06);
+}
+
+.composer textarea {
+  width: 100%;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 44px;
+  max-height: 160px;
+  color: var(--ink);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.tools {
+  display: flex;
+  gap: 8px;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-soft);
+  transition: 0.15s;
+}
+
+.tool:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+}
+
+.tool svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tool.active {
+  background: rgba(255, 156, 64, 0.15);
+  color: var(--neon-orange);
+  box-shadow: inset 0 0 0 1px rgba(255, 156, 64, 0.4);
+}
+
+/* 录音中：按钮变成玫红 + 闪烁圆点 */
+.tool.recording {
+  background: rgba(222, 31, 74, 0.18);
+  color: var(--neon-pink);
+  box-shadow: inset 0 0 0 1px rgba(222, 31, 74, 0.5);
+  position: relative;
+}
+
+.tool.recording::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--neon-pink);
+  box-shadow: 0 0 8px var(--neon-pink);
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.send {
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--neon-orange), var(--neon-yellow));
+  color: #2a1c10;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(255, 156, 64, 0.35);
+  transition: 0.15s;
+}
+
+.send:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 28px rgba(255, 156, 64, 0.5);
+}
+
+@media (max-width: 640px) {
+  .tool span { display: none; }
+}
+
+/* 消息气泡里的附件展示 */
+.attachment {
+  margin-top: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.attachment img {
+  max-width: 240px;
+  max-height: 240px;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.attachment audio {
+  width: 100%;
+  max-width: 320px;
+  height: 38px;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.file-icon { font-size: 16px; }
+
+/* 语音输入波形面板 */
+.voice-panel {
+  max-width: 860px;
+  margin: 0 auto 8px;
+  padding: 6px 16px;
+  border-radius: 14px;
+  background: var(--glass-soft);
+  border: 1px solid rgba(255, 156, 64, 0.22);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  animation: voice-panel-in 0.25s ease;
+  overflow: hidden;
+}
+
+.voice-panel[hidden] {
+  display: none !important;
+}
+
+@keyframes voice-panel-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.voice-visualizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--voice-mic-size);
+  max-height: var(--voice-mic-size);
+}
+
+.voice-mic {
+  flex: 0 0 var(--voice-mic-size);
+  width: var(--voice-mic-size);
+  height: var(--voice-mic-size);
+  color: var(--neon-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-mic-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.voice-bars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--voice-mic-size);
+}
+
+.voice-bars--left {
+  flex-direction: row-reverse;
+}
+
+.voice-bar {
+  width: var(--voice-bar-width);
+  min-height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--neon-orange), var(--neon-yellow));
+  opacity: 0.85;
+  transition: height 0.08s ease;
+}
+
+.tool.is-recording {
+  background: rgba(255, 156, 64, 0.18);
+  color: var(--neon-orange);
+  box-shadow: inset 0 0 0 1px rgba(255, 156, 64, 0.45), 0 0 16px rgba(255, 156, 64, 0.25);
+}
+

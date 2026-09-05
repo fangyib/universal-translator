@@ -1,0 +1,19 @@
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Secrets and local env
+.env
+backend/.env
+
+# OS / editor
+Thumbs.db
+*.swp

@@ -1,0 +1,89 @@
+:root {
+  /* 等距房间风格 · 由 Jason's Isometric Room 配色推导 */
+  --bg-deep: #0d1218;        /* 深夜蓝灰（mat17 框架色） */
+  --bg-mid: #1b1611;         /* 暖棕黑（家具阴影） */
+  --bg-glow: #2a1c10;        /* 灯火暖橙（mat19 暖色光） */
+  --glass: rgba(20, 26, 32, 0.52);
+  --glass-strong: rgba(26, 30, 36, 0.74);
+  --glass-soft: rgba(36, 42, 50, 0.42);
+  --ink: #f5ecd9;            /* 暖白（mat21 灯光反射） */
+  --ink-soft: #c8b89a;       /* 暖米 */
+  --muted: #8a7a64;          /* 木纹暖灰 */
+  --line: rgba(255, 220, 170, 0.12);
+  /* 房间配色（取自 GLB 材质） */
+  --neon-cyan: #38bbd4;      /* mat3 青蓝墙面 */
+  --neon-pink: #de1f4a;      /* mat7 玫红 */
+  --neon-yellow: #ffd40a;    /* mat12 明黄 */
+  --neon-green: #458c12;     /* mat9 草绿 */
+  --neon-blue: #0056c9;      /* mat5 深蓝 */
+  --neon-orange: #ff9c40;    /* mat18 暖橙 */
+  --shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  --radius: 22px;
+  --title-char-size: 44px;
+  --voice-mic-size: var(--title-char-size);
+  --voice-bar-width: 3px;
+  --font-display: "Cormorant Garamond", "Noto Serif SC", serif;
+  --font-ui: "Outfit", "Noto Sans SC", sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  color: var(--ink);
+  font-family: var(--font-ui);
+}
+
+body {
+  overflow: hidden;
+}
+
+button, textarea, input {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+
+textarea::placeholder {
+  color: var(--muted);
+}
+
+.muted { color: var(--muted); font-size: 12px; }
+
+/* ===== 自定义滚动条：去掉白色方框，灰色融入背景 ===== */
+.history,
+.chat {
+  scrollbar-width: thin;                     /* Firefox */
+  scrollbar-color: rgba(136, 136, 136, 0.55) transparent;
+}
+
+.history::-webkit-scrollbar,
+.chat::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history::-webkit-scrollbar-track,
+.chat::-webkit-scrollbar-track {
+  background: transparent;                  /* 去掉白色长方形底框 */
+}
+
+.history::-webkit-scrollbar-thumb,
+.chat::-webkit-scrollbar-thumb {
+  background: rgba(136, 136, 136, 0.55);    /* 灰色进度条，融入深色背景但可分辨 */
+  border-radius: 999px;
+}
+
+.history::-webkit-scrollbar-thumb:hover,
+.chat::-webkit-scrollbar-thumb:hover {
+  background: rgba(170, 170, 170, 0.75);
+}
+
+.history::-webkit-scrollbar-corner,
+.chat::-webkit-scrollbar-corner {
+  background: transparent;
+}

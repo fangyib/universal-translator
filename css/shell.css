@@ -1,0 +1,236 @@
+.app {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 100vh;
+  padding: 18px;
+  gap: 18px;
+}
+
+.sidebar,
+.stage {
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow);
+  border-radius: 28px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 18px;
+  gap: 16px;
+  min-height: 0;          /* 允许在 grid 单元格内收缩，避免把底部按钮挤出 */
+}
+
+.brand,
+.new-chat,
+.sidebar-foot {
+  flex-shrink: 0;         /* 品牌区/新对话按钮/底部按钮永远不被压缩 */
+}
+
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, var(--neon-orange), var(--neon-yellow));
+  color: #2a1c10;
+  font-size: 26px;
+  font-weight: 600;
+  box-shadow: 0 0 24px rgba(255, 156, 64, 0.35);
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.brand-en {
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.brand-zh {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.new-chat {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  transition: 0.2s;
+}
+
+.new-chat:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 156, 64, 0.4);
+}
+
+.history {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;          /* 会话列表超过空间时才出现滚动条 */
+}
+
+.section-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+#historyList {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+#historyList button {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  transition: 0.15s;
+}
+
+#historyList button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+}
+
+#historyList button.active {
+  background: rgba(255, 156, 64, 0.14);
+  color: var(--neon-orange);
+  box-shadow: inset 0 0 0 1px rgba(255, 156, 64, 0.35);
+}
+
+.sidebar-foot button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink-soft);
+  transition: 0.15s;
+}
+
+.sidebar-foot button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+}
+
+.stage {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-width: 0;
+  min-height: 0;          /* 允许在 .app 的 grid 行内收缩 */
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  padding: 14px 28px 0;
+  min-height: 16px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 14px 28px 0;
+  min-height: 16px;
+}
+
+.lang-switch {
+  position: relative;
+}
+
+.lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 13px;
+  transition: 0.15s;
+}
+
+.lang-btn:hover,
+.lang-btn[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+  border-color: rgba(255, 156, 64, 0.35);
+}
+
+.lang-chevron {
+  opacity: 0.7;
+}
+
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 120px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--glass-strong);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: var(--shadow);
+  z-index: 20;
+}
+
+.lang-menu[hidden] {
+  display: none;
+}
+
+.lang-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  transition: 0.15s;
+}
+
+.lang-menu button:hover,
+.lang-menu button.active {
+  background: rgba(255, 156, 64, 0.14);
+  color: var(--neon-orange);
+}
+
+@media (max-width: 960px) {
+  body { overflow: auto; }
+  .app {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100vh;
+  }
+  .sidebar { order: 2; }
+}

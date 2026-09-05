@@ -1,0 +1,220 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(4, 6, 20, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: grid;
+  place-items: end center;
+  padding: 24px;
+}
+
+.overlay[hidden] { display: none; }
+
+#loginOverlay {
+  place-items: center;
+}
+
+.sheet {
+  width: min(720px, 100%);
+  background: var(--glass-strong);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+}
+
+.sheet header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sheet h3 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sheet header p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.close {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink-soft);
+  transition: 0.15s;
+}
+
+.close:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--ink);
+}
+
+.about-body {
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.about-body ul {
+  margin-top: 12px;
+  padding-left: 18px;
+}
+
+.login-sheet {
+  width: min(420px, 100%);
+}
+
+.login-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-form label span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.login-form input {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 15px;
+  outline: none;
+  transition: 0.15s;
+}
+
+.login-form input::placeholder {
+  color: var(--muted);
+}
+
+.login-form input:focus {
+  border-color: var(--neon-orange);
+  box-shadow: 0 0 0 3px rgba(255, 156, 64, 0.18);
+}
+
+.login-submit {
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--neon-orange), var(--neon-yellow));
+  color: #2a1c10;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 0 20px rgba(255, 156, 64, 0.28);
+  transition: 0.15s;
+}
+
+.login-submit:hover {
+  box-shadow: 0 0 28px rgba(255, 156, 64, 0.45);
+  transform: translateY(-1px);
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--line);
+}
+
+.divider span {
+  position: relative;
+  padding: 0 12px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.social-login {
+  display: flex;
+  gap: 10px;
+}
+
+.social-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 13px;
+  transition: 0.15s;
+}
+
+.social-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--ink);
+}
+
+.login-tip {
+  text-align: center;
+  font-size: 13px;
+  color: var(--neon-orange);
+  min-height: 20px;
+}
+
+/* 顶部浮层提示 */
+.toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translate(-50%, -16px);
+  z-index: 50;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  border: 1px solid rgba(255, 156, 64, 0.32);
+  color: var(--ink);
+  font-size: 13px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  opacity: 0;
+  transition: 0.25s ease;
+}
+
+.toast.in {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
