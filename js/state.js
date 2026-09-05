@@ -40,3 +40,22 @@ function loadSessions() {
     console.warn("loadSessions failed", err);
   }
 }
+
+function clearAllSessions() {
+  AppState.sessions = [];
+  AppState.currentId = null;
+  AppState.attachments = [];
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (err) {
+    console.warn("clearAllSessions failed", err);
+  }
+  if (typeof renderHistory === "function") renderHistory();
+  if (typeof renderMessages === "function") renderMessages();
+  if (typeof renderChips === "function") renderChips();
+  const prompt = document.querySelector("#prompt");
+  if (prompt) {
+    prompt.value = "";
+    prompt.style.height = "auto";
+  }
+}

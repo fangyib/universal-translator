@@ -18,6 +18,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("#sendBtn").addEventListener("click", send);
   $("#newChatBtn").addEventListener("click", () => newChat());
+  $("#clearHistoryBtn").addEventListener("click", () => {
+    if (!AppState.sessions.length) return;
+    if (!window.confirm(t("clearHistory.confirm"))) return;
+    clearAllSessions();
+  });
   $("#aboutBtn").addEventListener("click", () => openOverlay("aboutOverlay"));
   $("#loginBtn").addEventListener("click", () => openOverlay("loginOverlay"));
 

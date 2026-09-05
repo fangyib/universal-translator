@@ -5,6 +5,8 @@ const STRINGS = {
     "page.title": "RESONA｜共鸣",
     "newChat": "新对话",
     "sectionLabel": "近期会话",
+    "clearHistory": "清除",
+    "clearHistory.confirm": "确定清除全部近期会话记录吗？此操作不可恢复。",
     "loginBtn": "登录",
     "aboutBtn": "关于",
     "welcome.kicker": "A translator for your emotion",
@@ -65,6 +67,8 @@ const STRINGS = {
     "page.title": "RESONA｜共鸣",
     "newChat": "New Session",
     "sectionLabel": "Recent",
+    "clearHistory": "Clear",
+    "clearHistory.confirm": "Clear all recent sessions? This cannot be undone.",
     "loginBtn": "Sign In",
     "aboutBtn": "About",
     "welcome.kicker": "A translator for your emotion",
@@ -165,6 +169,19 @@ const SCENE_ZH_TO_EN = {
   "焦虑 · 晚霞": "Anxiety · Sunset"
 };
 
+const SCENE_EN_TO_ZH = Object.fromEntries(
+  Object.entries(SCENE_ZH_TO_EN).map(([zh, en]) => [en, zh])
+);
+
+const EMOTION_ZH = {
+  joy: "快乐",
+  calm: "平静",
+  anger: "愤怒",
+  fatigue: "疲惫",
+  sadness: "悲伤",
+  anxiety: "焦虑"
+};
+
 let currentLang = "zh";
 
 function moodTone(enKey) {
@@ -176,6 +193,8 @@ function snapshotReplyLocales(result, raw) {
   if (!result || result._typing) return result;
   if (raw) result._raw = raw;
   const base = { ...result, _raw: raw || result._raw };
+  delete base._zh;
+  delete base._en;
   const zh = localizeReply(base, "zh");
   const en = localizeReply(base, "en");
   result._zh = { intro: zh.intro, lines: zh.lines, footer: zh.footer };
@@ -183,65 +202,162 @@ function snapshotReplyLocales(result, raw) {
   return result;
 }
 
+function buildReplyFromRaw(result, raw, lang) {
+  const p = raw.llm_params;
+  const scene = raw.scene && raw.scene.scene;
+  const labelEn = p.label_en || EMOTION_EN[p.primary_emotion] || p.label_zh || "";
+  const labelZh = p.label_zh || EMOTION_ZH[p.primary_emotion] || labelEn;
+  const keywords = p.keywords || [];
+  const keywordsZh = keywords.join("、") || "—";
+  const keywordsEn = keywords.join(", ") || "—";
+
+  if (lang === "en") {
+    return {
+      ...result,
+      intro: tForLang("reply.intro", "en", { emotion: labelEn }),
+      lines: [
+        { label: tForLang("reply.emotion", "en"), value: `${labelEn} (${p.primary_emotion})` },
+        { label: tForLang("reply.scene", "en"), value: scene?.name_en || translateSceneName(scene?.name_zh) },
+        { label: tForLang("reply.keywords", "en"), value: keywordsEn },
+        { label: tForLang("reply.summary", "en"), value: p.summary_en || p.summary }
+      ],
+      footer: tForLang("reply.footer", "en")
+    };
+  }
+
+  return {
+    ...result,
+    intro: tForLang("reply.intro", "zh", { emotion: labelZh }),
+    lines: [
+      { label: tForLang("reply.emotion", "zh"), value: `${labelZh}（${p.primary_emotion}）` },
+      { label: tForLang("reply.scene", "zh"), value: scene?.name_zh || SCENE_EN_TO_ZH[scene?.name_en] || scene?.name_en },
+      { label: tForLang("reply.keywords", "zh"), value: keywordsZh },
+      { label: tForLang("reply.summary", "zh"), value: p.summary || p.summary_en }
+    ],
+    footer: tForLang("reply.footer", "zh")
+  };
+}
+
 function translateSceneName(name) {
   if (!name) return name;
   return SCENE_ZH_TO_EN[name] || name;
 }
 
-function translateReplyFallback(result) {
-  if (currentLang === "zh") return result;
-  const zh = result._zh || result;
-  const introMatch = String(zh.intro || "").match(/^我听到了你的声音。此刻的你，带着一丝(.+)。$/);
-  const emotionZh = introMatch ? introMatch[1] : "";
-  const emotionEn = Object.entries({
-    快乐: "Joy", 平静: "Calm", 愤怒: "Anger", 疲惫: "Fatigue", 悲伤: "Sadness", 焦虑: "Anxiety"
-  }).find(([k]) => emotionZh.includes(k))?.[1] || emotionZh;
+function translateReplyFallback(result, lang) {
+  const useLang = lang || currentLang;
+  const zhSource = result._zh || result;
+  const enSource = result._en;
 
-  const lines = (zh.lines || []).map((line) => {
+  if (useLang === "en") {
+    if (enSource) {
+      return {
+        ...result,
+        intro: enSource.intro,
+        lines: enSource.lines,
+        footer: enSource.footer
+      };
+    }
+
+    const introMatch = String(zhSource.intro || "").match(/^我听到了你的声音。此刻的你，带着一丝(.+)。$/);
+    const emotionZh = introMatch ? introMatch[1] : "";
+    const emotionEn = Object.entries(EMOTION_ZH).find(([_, zh]) => emotionZh.includes(zh))?.[0];
+    const emotionLabel = emotionEn ? EMOTION_EN[emotionEn] : emotionZh;
+
+    const lines = (zhSource.lines || []).map((line) => {
+      const label = String(line.label || "");
+      const value = String(line.value || "");
+      if (label.includes("情绪")) {
+        const em = value.match(/（([^）]+)）/);
+        const key = em ? em[1] : "";
+        const enLabel = EMOTION_EN[key] || value.split("（")[0];
+        return { label: tForLang("reply.emotion", "en"), value: `${enLabel} (${key || "emotion"})` };
+      }
+      if (label.includes("场景")) {
+        return { label: tForLang("reply.scene", "en"), value: translateSceneName(value) };
+      }
+      if (label.includes("关键词")) {
+        return { label: tForLang("reply.keywords", "en"), value };
+      }
+      if (label.includes("感受") || label.includes("Summary")) {
+        return { label: tForLang("reply.summary", "en"), value };
+      }
+      return line;
+    });
+
+    return {
+      ...result,
+      intro: introMatch ? tForLang("reply.intro", "en", { emotion: emotionLabel }) : zhSource.intro,
+      lines,
+      footer: tForLang("reply.footer", "en")
+    };
+  }
+
+  if (result._zh) {
+    return {
+      ...result,
+      intro: result._zh.intro,
+      lines: result._zh.lines,
+      footer: result._zh.footer
+    };
+  }
+
+  const introMatchEn = String(result.intro || "").match(/^I hear you\. Right now, you're carrying a trace of (.+)\.$/);
+  const emotionEn = introMatchEn ? introMatchEn[1] : "";
+  const emotionKey = Object.entries(EMOTION_EN).find(([_, en]) => en === emotionEn)?.[0];
+  const emotionZh = emotionKey ? EMOTION_ZH[emotionKey] : emotionEn;
+
+  const lines = (result.lines || []).map((line) => {
     const label = String(line.label || "");
     const value = String(line.value || "");
-    if (label.includes("情绪")) {
-      const em = value.match(/（([^）]+)）/);
+    if (/emotion/i.test(label)) {
+      const em = value.match(/\(([^)]+)\)/);
       const key = em ? em[1] : "";
-      const enLabel = EMOTION_EN[key] || value.split("（")[0];
-      return { label: t("reply.emotion"), value: `${enLabel} (${key || "emotion"})` };
+      const zhLabel = EMOTION_ZH[key] || value.split(" (")[0];
+      return { label: tForLang("reply.emotion", "zh"), value: `${zhLabel}（${key || "emotion"}）` };
     }
-    if (label.includes("场景")) {
-      return { label: t("reply.scene"), value: translateSceneName(value) };
+    if (/scene/i.test(label)) {
+      return { label: tForLang("reply.scene", "zh"), value: SCENE_EN_TO_ZH[value] || value };
     }
-    if (label.includes("关键词")) {
-      return { label: t("reply.keywords"), value };
+    if (/keyword/i.test(label)) {
+      return { label: tForLang("reply.keywords", "zh"), value };
     }
-    if (label.includes("感受") || label.includes("Summary")) {
-      return { label: t("reply.summary"), value };
+    if (/summary/i.test(label)) {
+      return { label: tForLang("reply.summary", "zh"), value };
     }
     return line;
   });
 
   return {
     ...result,
-    intro: introMatch ? t("reply.intro", { emotion: emotionEn }) : zh.intro,
+    intro: introMatchEn ? tForLang("reply.intro", "zh", { emotion: emotionZh }) : result.intro,
     lines,
-    footer: t("reply.footer")
+    footer: tForLang("reply.footer", "zh")
   };
 }
 
 function localizeReply(result, lang) {
-  if (!result || result._typing) return result;
+  if (!result) return result;
   const useLang = lang || currentLang;
-  if (useLang === "zh") {
-    if (result._zh) {
-      return {
-        ...result,
-        intro: result._zh.intro,
-        lines: result._zh.lines,
-        footer: result._zh.footer
-      };
-    }
-    return result;
+
+  if (result._typing) {
+    return { ...result, intro: tForLang("thinking", useLang) };
   }
 
-  if (result._en) {
+  const raw = result._raw;
+  if (raw && raw.llm_params) {
+    return buildReplyFromRaw(result, raw, useLang);
+  }
+
+  if (useLang === "zh" && result._zh) {
+    return {
+      ...result,
+      intro: result._zh.intro,
+      lines: result._zh.lines,
+      footer: result._zh.footer
+    };
+  }
+
+  if (useLang === "en" && result._en) {
     return {
       ...result,
       intro: result._en.intro,
@@ -250,34 +366,15 @@ function localizeReply(result, lang) {
     };
   }
 
-  const raw = result._raw;
-  if (raw && raw.llm_params) {
-    const p = raw.llm_params;
-    const scene = raw.scene && raw.scene.scene;
-    const labelEn = p.label_en || EMOTION_EN[p.primary_emotion] || p.label_zh;
-    const keywords = (p.keywords || []).join("、") || "—";
-    return {
-      ...result,
-      intro: t("reply.intro", { emotion: labelEn }),
-      lines: [
-        { label: t("reply.emotion"), value: `${labelEn} (${p.primary_emotion})` },
-        { label: t("reply.scene"), value: scene?.name_en || translateSceneName(result._zh?.lines?.[1]?.value) },
-        { label: t("reply.keywords"), value: keywords },
-        { label: t("reply.summary"), value: p.summary_en || p.summary }
-      ],
-      footer: t("reply.footer")
-    };
-  }
-
-  return translateReplyFallback(result);
+  return translateReplyFallback(result, useLang);
 }
 
 function getLang() {
   return currentLang;
 }
 
-function t(key, vars) {
-  const table = STRINGS[currentLang] || STRINGS.zh;
+function tForLang(key, lang, vars) {
+  const table = STRINGS[lang === "en" ? "en" : "zh"] || STRINGS.zh;
   let text = table[key] ?? STRINGS.zh[key] ?? key;
   if (vars) {
     Object.keys(vars).forEach((k) => {
@@ -285,6 +382,10 @@ function t(key, vars) {
     });
   }
   return text;
+}
+
+function t(key, vars) {
+  return tForLang(key, currentLang, vars);
 }
 
 function setLang(lang, persist) {

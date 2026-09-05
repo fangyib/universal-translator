@@ -1,5 +1,5 @@
 const GAME_PATH = "game/room.html";
-const GAME_VERSION = "20260905-i18n";
+const GAME_VERSION = "20260906-dusk-sun";
 
 let gameFrame = null;
 let gameView = null;

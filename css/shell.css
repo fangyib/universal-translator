@@ -94,6 +94,33 @@
   min-height: 0;          /* 会话列表超过空间时才出现滚动条 */
 }
 
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.history-head .section-label {
+  margin-bottom: 0;
+}
+
+.clear-history {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  transition: 0.15s;
+}
+
+.clear-history:hover {
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .section-label {
   font-size: 12px;
   color: var(--muted);
